@@ -1,27 +1,25 @@
-#Sử dụng image Maven 3.9.9 với JDK Amazon Corretto 21 để build project.
+# Sử dụng Maven để build
 FROM maven:3.9.9-amazoncorretto-21 AS build
 
-#Thiết lập thư mục làm việc trong container là /app.
 WORKDIR /app
 
-#COPY pom.xml . → Sao chép file pom.xml (định nghĩa dependencies).
-#COPY src ./src → Sao chép toàn bộ mã nguồn (src) vào container.
 COPY pom.xml .
 COPY src ./src
 
-#Build ứng dụng bằng Maven, tạo file .jar trong thư mục target/.
-#-DskipTests bỏ qua unit tests để giảm thời gian build.
+# Build ứng dụng mà không chạy test
 RUN mvn package -DskipTests
 
-
-#Sử dụng Amazon Corretto 21 (JDK 21) làm runtime để chạy ứng dụng.
-#Không cần Maven trong runtime → giúp giảm kích thước image.
+# Sử dụng Amazon Corretto 21 để chạy ứng dụng
 FROM amazoncorretto:21.0.6
 
-#Đặt thư mục làm việc là /app.
 WORKDIR /app
-#Sao chép file .jar đã build từ stage build vào /app/ của container.
-#--from=build lấy dữ liệu từ giai đoạn đầu.
+
+# Copy file .jar từ quá trình build
 COPY --from=build /app/target/*.jar app.jar
+
+# Cấu hình môi trường (chỉ cần nếu bạn dùng biến môi trường trong application.properties)
+ENV SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/mydatabase?useSSL=false&allowPublicKeyRetrieval=true
+ENV SPRING_DATASOURCE_USERNAME=root
+ENV SPRING_DATASOURCE_PASSWORD=root
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
