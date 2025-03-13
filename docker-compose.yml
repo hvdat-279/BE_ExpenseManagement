@@ -1,31 +1,31 @@
-version: '3.8'
+version: "3.8"  # Phiên bản Docker Compose
 
 services:
-  app:
-    build: .
-    container_name: spring_app
-    ports:
-      - "8080:8080"
-    depends_on:
-      - db
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/mydatabase?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-
-  db:
-    image: mysql:8.0
-    container_name: mysql_db
+  mysql:  # Container cho MySQL
+    image: mysql:8.0.40-debian  # Sử dụng MySQL 8
+    container_name: mysql-container
     restart: always
     environment:
+      MYSQL_DATABASE: ExpenseManagement
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: mydatabase
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
+    networks:
+      - mynetwork
 
-volumes:
-  mysql_data:
+  app:  # Container cho ứng dụng Spring Boot
+    build: .  # Build image từ Dockerfile trong thư mục hiện tại
+    container_name: expense-management
+    restart: always
+    depends_on:
+      - mysql  # Đảm bảo MySQL chạy trước khi khởi động app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ExpenseManagement
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
